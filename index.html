@@ -3,13 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iMessenger-like Chat</title>
+<title>iMessage-like Chat</title>
 <style>
     body {
-        font-family: "Arial", sans-serif; /*fallback font*/
-        font-size: 14px;
-        line-height: 1.6;
-        background-color: #f2f2f2;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background-color: #dcdcdc;
         margin: 0;
         padding: 0;
     }
@@ -19,85 +17,150 @@
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
     }
     .chat-header {
-        background-color: #007bff;
+        background-color: #007aff;
         color: #fff;
-        padding: 10px;
+        padding: 15px;
         text-align: center;
+        font-size: 18px;
+        font-weight: bold;
     }
     .chat-messages {
-        padding: 10px;
+        padding: 20px;
         overflow-y: scroll;
-        max-height: 300px;
+        max-height: 400px;
+        background-color: #f9f9f9;
     }
     .message {
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 5px;
-        max-width: 70%;
+        display: block;
+        margin: 10px 0;
+        padding: 10px 15px;
+        border-radius: 20px;
         clear: both;
+        position: relative;
+        max-width: 70%;
+        word-wrap: break-word;
     }
     .message.sender {
-        background-color: #007bff;
+        background-color: #007aff;
         color: #fff;
         float: right;
     }
     .message.receiver {
-        background-color: #f2f2f2;
-        color: #333;
+        background-color: #e5e5ea;
+        color: #000;
         float: left;
     }
-    .message input[type="text"] {
-        width: calc(100% - 20px);
-        border: none;
-        border-radius: 5px;
+    .message-input {
+        display: flex;
         padding: 10px;
-        margin-top: 10px;
+        background-color: #f2f2f2;
+        border-top: 1px solid #ccc;
     }
-    .message input[type="submit"] {
-        background-color: #007bff;
+    .message-input input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        outline: none;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    .message-input input[type="submit"] {
+        background-color: #007aff;
         color: #fff;
         border: none;
-        border-radius: 5px;
+        border-radius: 20px;
         padding: 10px 20px;
         cursor: pointer;
-        margin-top: 10px;
-        float: right;
+        font-size: 16px;
+        outline: none;
     }
 </style>
 </head>
 <body>
 <div class="chat-container">
     <div class="chat-header">
-        Tin nhắn (tự xóa sau 5 phút)
+        Tin nhắn (tự động xóa sau 1 ngày)
     </div>
     <div class="chat-messages" id="chatMessages">
         <!-- Chat messages will be added dynamically here -->
     </div>
-    <div class="message">
+    <div class="message-input">
         <input type="text" id="messageInput" placeholder="Nhập tin nhắn của bạn...">
         <input type="submit" value="Gửi" onclick="sendMessage()">
     </div>
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMessages();
+    });
+
     function sendMessage() {
         var messageInput = document.getElementById('messageInput');
         var message = messageInput.value.trim();
         if (message !== '') {
             var chatMessages = document.getElementById('chatMessages');
             var messageDiv = document.createElement('div');
-            messageDiv.textContent = message;
+            var now = new Date();
+            var time = now.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
+            var senderName = generateSenderName();
+            messageDiv.textContent = '[' + time + '] ' + senderName + ': ' + message; // Add time and sender name to message
             messageDiv.classList.add('message', 'sender');
             chatMessages.appendChild(messageDiv);
             messageInput.value = '';
             chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
-            // Auto remove message after 5 minutes (300000 milliseconds)
+
+            saveMessage(message, now, senderName);
+
             setTimeout(function() {
                 chatMessages.removeChild(messageDiv);
-            }, 300000);
+                removeMessage(message, now, senderName);
+            }, 86400000);
         }
+    }
+
+    function saveMessage(message, timestamp, senderName) {
+        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        messages.push({
+            message: message,
+            timestamp: timestamp.getTime(),
+            sender: senderName
+        });
+        localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
+
+    function removeMessage(message, timestamp, senderName) {
+        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        var index = messages.findIndex(function(item) {
+            return item.message === message && item.timestamp === timestamp.getTime() && item.sender === senderName;
+        });
+        if (index !== -1) {
+            messages.splice(index, 1);
+        }
+        localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
+
+    function loadMessages() {
+        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        var chatMessages = document.getElementById('chatMessages');
+        messages.forEach(function(item) {
+            var messageDiv = document.createElement('div');
+            var timestamp = new Date(item.timestamp);
+            var time = timestamp.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
+            messageDiv.textContent = '[' + time + '] ' + item.sender + ': ' + item.message; // Add time, sender name, and message
+            messageDiv.classList.add('message', 'sender');
+            chatMessages.appendChild(messageDiv);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function generateSenderName() {
+        var ip = Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256);
+        return 'User_' + ip.replace(/\./g, '_');
     }
 </script>
 </body>
