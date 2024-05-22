@@ -94,7 +94,27 @@
     </div>
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-database-compat.js"></script>
+
 <script>
+    // Your Firebase configuration
+    var firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    var database = firebase.database();
+
     document.addEventListener('DOMContentLoaded', function() {
         loadMessages();
     });
@@ -103,65 +123,86 @@
         var messageInput = document.getElementById('messageInput');
         var message = messageInput.value.trim();
         if (message !== '') {
-            var chatMessages = document.getElementById('chatMessages');
-            var messageDiv = document.createElement('div');
             var now = new Date();
             var time = now.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
             var senderName = generateSenderName();
-            messageDiv.textContent = '[' + time + '] ' + senderName + ': ' + message; // Add time and sender name to message
-            messageDiv.classList.add('message', 'sender');
-            chatMessages.appendChild(messageDiv);
+            var messageData = {
+                message: message,
+                timestamp: now.getTime(), // Store message timestamp as milliseconds since Unix epoch
+                sender: senderName
+            };
+
+            // Save message to Firebase
+            database.ref('messages').push(messageData);
+
             messageInput.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
-
-            saveMessage(message, now, senderName);
-
-            setTimeout(function() {
-                chatMessages.removeChild(messageDiv);
-                removeMessage(message, now, senderName);
-            }, 86400000);
         }
-    }
-
-    function saveMessage(message, timestamp, senderName) {
-        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-        messages.push({
-            message: message,
-            timestamp: timestamp.getTime(),
-            sender: senderName
-        });
-        localStorage.setItem('chatMessages', JSON.stringify(messages));
-    }
-
-    function removeMessage(message, timestamp, senderName) {
-        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-        var index = messages.findIndex(function(item) {
-            return item.message === message && item.timestamp === timestamp.getTime() && item.sender === senderName;
-        });
-        if (index !== -1) {
-            messages.splice(index, 1);
-        }
-        localStorage.setItem('chatMessages', JSON.stringify(messages));
     }
 
     function loadMessages() {
-        var messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
         var chatMessages = document.getElementById('chatMessages');
-        messages.forEach(function(item) {
+
+        // Listen for new messages added to Firebase
+        database.ref('messages').on('child_added', function(snapshot) {
+            var item = snapshot.val();
             var messageDiv = document.createElement('div');
             var timestamp = new Date(item.timestamp);
             var time = timestamp.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
             messageDiv.textContent = '[' + time + '] ' + item.sender + ': ' + item.message; // Add time, sender name, and message
             messageDiv.classList.add('message', 'sender');
             chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Listen for messages removed from Firebase
+        database.ref('messages').on('child_removed', function(snapshot) {
+            var messages = document.querySelectorAll('.message');
+            messages.forEach(function(messageDiv) {
+                if (messageDiv.textContent.includes(snapshot.val().message)) {
+                    chatMessages.removeChild(messageDiv);
+                }
+            });
+        });
+
+        // Periodically remove messages older than 1 day
+        setInterval(function() {
+            var cutoff = Date.now() - 86400000; // 1 day in milliseconds
+            var oldMessages = database.ref('messages').orderByChild('timestamp').endAt(cutoff);
+            oldMessages.once('value', function(snapshot) {
+                snapshot.forEach(function(childSnapshot) {
+                    database.ref('messages/' + childSnapshot.key).remove();
+                });
+            });
+        }, 60000); // Check every 60 seconds
     }
 
     function generateSenderName() {
         var ip = Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256);
         return 'User_' + ip.replace(/\./g, '_');
     }
+</script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBMKrnG-nzEhIl9f5lVIp4U241-RGp4bEc",
+    authDomain: "hsdiary-aec7c.firebaseapp.com",
+    projectId: "hsdiary-aec7c",
+    storageBucket: "hsdiary-aec7c.appspot.com",
+    messagingSenderId: "183436935187",
+    appId: "1:183436935187:web:de598624b222fd483c3fe6",
+    measurementId: "G-ZQHJJHZXBG"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
 </script>
 </body>
 </html>
