@@ -1,156 +1,218 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iMessage-like Chat</title>
-<script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database-compat.js"></script>
-<style>
-    body {
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        background-color: #dcdcdc;
-        margin: 0;
-        padding: 0;
-    }
-    .chat-container {
-        max-width: 500px;
-        margin: 20px auto;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-    }
-    .chat-header {
-        background-color: #007aff;
-        color: #fff;
-        padding: 15px;
-        text-align: center;
-        font-size: 18px;
-        font-weight: bold;
-    }
-    .chat-messages {
-        padding: 10px;
-        height: 300px;
-        overflow-y: scroll;
-        border-bottom: 1px solid #ddd;
-    }
-    .message {
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 10px;
-        max-width: 70%;
-        clear: both;
-    }
-    .message.sender {
-        background-color: #007aff;
-        color: #fff;
-        float: right;
-    }
-    .message.receiver {
-        background-color: #f1f1f1;
-        color: #333;
-        float: left;
-    }
-    .message-input {
-        padding: 10px;
-        display: flex;
-        justify-content: space-between;
-    }
-    .message-input input[type="text"] {
-        width: calc(100% - 60px);
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        padding: 10px;
-    }
-    .message-input input[type="submit"] {
-        background-color: #007aff;
-        color: #fff;
-        border: none;
-        border-radius: 20px;
-        padding: 10px 20px;
-        cursor: pointer;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài đăng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f5;
+            margin: 0;
+            padding: 0;
+        }
+        .post-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 10px auto;
+            max-width: 600px;
+            padding: 10px;
+        }
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .post-header img {
+            border-radius: 50%;
+            height: 40px;
+            width: 40px;
+            margin-right: 10px;
+        }
+        .post-header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .post-header .user-info h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        .post-header .user-info p {
+            margin: 0;
+            font-size: 12px;
+            color: gray;
+        }
+        .post-header button {
+            background-color: #f0f0f5;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .post-image {
+            margin-top: 10px;
+            width: 100%;
+            border-radius: 10px;
+        }
+        .post-content h2 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .post-content p {
+            font-size: 14px;
+            color: #555;
+        }
+        .post-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .post-actions button {
+            background-color: transparent;
+            border: none;
+            color: gray;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .post-actions button i {
+            margin-right: 5px;
+        }
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: gray;
+        }
+        .post-footer span {
+            margin-right: 10px;
+        }
+        .new-post {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 10px auto;
+            max-width: 600px;
+            padding: 10px;
+        }
+        .new-post textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        .new-post input[type="file"] {
+            display: none;
+        }
+        .new-post label {
+            display: inline-block;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .new-post button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-<div class="chat-container">
-    <div class="chat-header">
-        Tin nhắn (tự động xóa sau 1 ngày)
+
+<div class="new-post">
+    <textarea placeholder="Viết bài của bạn..."></textarea>
+    <div>
+        <label for="upload-photo">Tải ảnh lên</label>
+        <input type="file" id="upload-photo" accept="image/*">
     </div>
-    <div class="chat-messages" id="chatMessages">
-        <!-- Chat messages will be added dynamically here -->
+    <button>Đăng bài</button>
+</div>
+
+<div class="post-container">
+    <div class="post-header">
+        <div class="user-info">
+            <img src="https://via.placeholder.com/40" alt="User Avatar">
+            <div>
+                <h3>User</h3>
+                <p>2024-05-20 10:11:34</p>
+            </div>
+        </div>
+        <button>Theo dõi</button>
     </div>
-    <div class="message-input">
-        <input type="text" id="messageInput" placeholder="Nhập tin nhắn của bạn...">
-        <input type="submit" value="Gửi" onclick="sendMessage()">
+    <img src="https://thumbor.forbes.com/thumbor/fit-in/1290x/https://www.forbes.com/advisor/wp-content/uploads/2022/10/Paralegal_vs._Lawyer.jpeg.jpg" alt="Post Image" class="post-image">
+    <div class="post-content">
+        <h2>Cố tình trốn tránh, trì hoãn việc chấp hành quyết định xử phạt hành chính</h2>
+        <p>Cá nhân, tổ chức bị xử phạt chỉ bị coi là cố tình trốn tránh, trì hoãn việc chấp hành quyết định xử phạt vi phạm hành chính khi đã bị áp dụng biện pháp cưỡng chế theo quy định pháp luật (bao gồm cả việc ra quyết định cưỡng chế và tổ chức thi hành việc cưỡng chế theo các điều 86, 87 và 88 Luật Xử lý vi phạm hành chính năm 2012 và Nghị định số 166/2013/NĐ-CP ngày 12/11/2013 của Chính phủ quy định về cưỡng chế thi hành quyết định xử phạt vi phạm hành chính) mà vẫn không thi hành; đồng thời, cố tình tìm cách trốn tránh, trì hoãn việc chấp hành quyết định đó như tẩu tán tài sản, gây khó khăn cho việc thi hành... Nếu hết thời hạn quy định người bị xử phạt không chấp hành quyết định xử phạt vi phạm hành chính mà cơ quan, người có thẩm quyền ra quyết định xử phạt không có bất kỳ biện pháp nào buộc người bị xử phạt phải chấp hành quyết định đó thì không thuộc trường hợp người bị xử phạt cố tình trốn tránh, trì hoãn việc thi hành quyết định 
+
+Trích nguồn Hướng dẫn Công văn số Số: 5887/VKSTC-V14 V/v giải đáp một số khó khăn, vướng mắc liên quan đến quy định của BLHS, BLTTHS năm 2015 và thi hành án hình sự có hướng dẫn như sau:</p>
+    </div>
+    <div class="post-actions">
+        <button><i class="fa fa-thumbs-up"></i> Like</button>
+        <button><i class="fa fa-comment"></i> Comment</button>
+        <button><i class="fa fa-share"></i> Share</button>
+    </div>
+    <div class="post-footer">
+        <span>0 Like</span>
+        <span>5 lượt xem</span>
+        <span>0 bình luận</span>
     </div>
 </div>
 
 <script>
-    // Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBMKrnG-nzEhIl9f5lVIp4U241-RGp4bEc",
-        authDomain: "hsdiary-aec7c.firebaseapp.com",
-        projectId: "hsdiary-aec7c",
-        storageBucket: "hsdiary-aec7c.appspot.com",
-        messagingSenderId: "183436935187",
-        appId: "1:183436935187:web:de598624b222fd483c3fe6",
-        measurementId: "G-ZQHJJHZXBG"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    document.addEventListener('DOMContentLoaded', function() {
-        loadMessages();
+    // JavaScript code to handle image upload and post submission
+    document.querySelector('.new-post button').addEventListener('click', function() {
+        const textarea = document.querySelector('.new-post textarea');
+        const fileInput = document.getElementById('upload-photo');
+        
+        // Create new post element
+        const newPost = document.createElement('div');
+        newPost.className = 'post-container';
+        newPost.innerHTML = `
+            <div class="post-header">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="User Avatar">
+                    <div>
+                        <h3>Đức Thành Lawyer</h3>
+                        <p>${new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
+                    </div>
+                </div>
+                <button>Theo dõi</button>
+            </div>
+            ${fileInput.files.length ? `<img src="${URL.createObjectURL(fileInput.files[0])}" alt="Post Image" class="post-image">` : ''}
+            <div class="post-content">
+                <h2>${textarea.value}</h2>
+                <p></p>
+            </div>
+            <div class="post-actions">
+                <button><i class="fa fa-thumbs-up"></i> Like</button>
+                <button><i class="fa fa-comment"></i> Comment</button>
+                <button><i class="fa fa-share"></i> Share</button>
+            </div>
+            <div class="post-footer">
+                <span>0 Like</span>
+                <span>0 lượt xem</span>
+                <span>0 bình luận</span>
+            </div>
+        `;
+        
+        // Append new post to body
+        document.body.appendChild(newPost);
+        
+        // Clear textarea and file input
+        textarea.value = '';
+        fileInput.value = '';
     });
-
-    function sendMessage() {
-        var messageInput = document.getElementById('messageInput');
-        var message = messageInput.value.trim();
-        if (message !== '') {
-            var now = new Date();
-            var time = now.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
-            var senderName = generateSenderName();
-
-            var messageData = {
-                message: message,
-                timestamp: now.getTime(),
-                sender: senderName
-            };
-
-            db.ref('messages').push(messageData);
-
-            messageInput.value = '';
-        }
-    }
-
-    function loadMessages() {
-        var chatMessages = document.getElementById('chatMessages');
-        db.ref('messages').on('child_added', function(snapshot) {
-            var item = snapshot.val();
-            var messageDiv = document.createElement('div');
-            var timestamp = new Date(item.timestamp);
-            var time = timestamp.toLocaleString(); // Format: ngày/tháng/năm, giờ:phút:giây
-            messageDiv.textContent = '[' + time + '] ' + item.sender + ': ' + item.message; // Add time, sender name, and message
-            messageDiv.classList.add('message', 'sender');
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
-
-            // Auto remove message after 1 day (86400000 milliseconds)
-            setTimeout(function() {
-                db.ref('messages').child(snapshot.key).remove();
-                chatMessages.removeChild(messageDiv);
-            }, 86400000);
-        });
-    }
-
-    function generateSenderName() {
-        var ip = Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256) + '.' + Math.floor(Math.random() * 256);
-        return 'User_' + ip.replace(/\./g, '_');
-    }
 </script>
+
 </body>
 </html>
