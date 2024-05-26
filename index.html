@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -53,7 +53,7 @@
         border: 1px solid #ddd;
         border-radius: 20px;
         padding: 10px;
-        font-size: 2vw; /* Đổi kích thước font chữ thành 2% của chiều rộng của viewport */
+        font-size: 4vw; /* Đổi kích thước font chữ thành 4% của chiều rộng của viewport */
     }
     .message-input input[type="submit"] {
         background-color: #007aff;
@@ -62,7 +62,7 @@
         border-radius: 20px;
         padding: 10px 20px;
         cursor: pointer;
-        font-size: 2vw; /* Đổi kích thước font chữ thành 2% của chiều rộng của viewport */
+        font-size: 4vw; /* Đổi kích thước font chữ thành 4% của chiều rộng của viewport */
     }
 </style>
 </head>
@@ -135,7 +135,9 @@
             // Auto remove message after 1 day (86400000 milliseconds)
             setTimeout(function() {
                 db.ref('messages').child(snapshot.key).remove();
-                chatMessages.removeChild(messageDiv);
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
             }, 86400000);
         });
     }
