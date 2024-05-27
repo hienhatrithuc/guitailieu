@@ -69,14 +69,14 @@
 <body>
 <div class="chat-container">
     <div class="chat-header">
-        Tin nhắn (tự động xóa sau 1 ngày)
+        Tin nhắn (tự động xóa sau 1 phút)
     </div>
     <div class="chat-messages" id="chatMessages">
         <!-- Chat messages will be added dynamically here -->
     </div>
     <div class="message-input">
         <input type="text" id="messageInput" placeholder="Nhập tin nhắn của bạn...">
-        <input type="submit" value="Gửi" onclick="sendMessage()">
+        <input type="submit" value="Gửi" onclick="sendMessage()" id="sendMessageButton">
     </div>
 </div>
 
@@ -96,11 +96,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let canSendMessage = true;
+
     document.addEventListener('DOMContentLoaded', function() {
         loadMessages();
     });
 
     function sendMessage() {
+        if (!canSendMessage) return; // Ngăn chặn việc gửi tin nhắn quá nhanh
         var messageInput = document.getElementById('messageInput');
         var message = messageInput.value.trim();
         if (message !== '') {
@@ -117,6 +120,10 @@
             db.ref('messages').push(messageData);
 
             messageInput.value = '';
+            canSendMessage = false; // Ngăn chặn việc gửi tin nhắn trong 5 giây
+            setTimeout(function() {
+                canSendMessage = true;
+            }, 15000);
         }
     }
 
@@ -149,3 +156,4 @@
 </script>
 </body>
 </html>
+
